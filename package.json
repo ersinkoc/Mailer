@@ -27,6 +27,9 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run test:coverage"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "email",
     "mail",
