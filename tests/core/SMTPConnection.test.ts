@@ -37,6 +37,8 @@ describe('SMTPConnection', () => {
 
   afterEach(() => {
     connection.removeAllListeners();
+    jest.clearAllTimers();
+    jest.useRealTimers();
   });
 
   describe('connect', () => {
@@ -574,6 +576,30 @@ describe('SMTPConnection', () => {
       await expect(connection.sendCommand('NOOP')).rejects.toThrow('Connection destroyed');
     });
 
+    it('should handle null or undefined response in callback', async () => {
+      // First establish connection
+      const connectPromise = connection.connect();
+      mockSocket.emit('connect');
+      process.nextTick(() => {
+        mockSocket.emit('data', Buffer.from('220 smtp.example.com ESMTP ready\r\n'));
+      });
+      process.nextTick(() => {
+        mockSocket.emit('data', Buffer.from('250 smtp.example.com\r\n'));
+      });
+      await connectPromise;
+
+      // Override processCommandQueue to call callback with null response
+      (connection as any).processCommandQueue = function() {
+        const { callback } = this.commandQueue.shift();
+        this.currentCommand = null;
+        // Call callback with no error but null/undefined response
+        callback(null, null);
+      };
+
+      const result = await connection.sendCommand('TEST');
+      expect(result).toBe(''); // Should resolve with empty string due to line 247
+    });
+
     it('should reject if socket is null', async () => {
       // First establish connection
       const connectPromise = connection.connect();
@@ -663,6 +689,84 @@ describe('SMTPConnection', () => {
       });
       
       await expect(tlsConnection.upgradeToTLS()).rejects.toThrow('TLS upgrade failed: Certificate verification failed');
+    });
+  });
+
+  describe('uncovered branch conditions', () => {
+    const testOptions = {
+      host: 'smtp.example.com',
+      port: 587,
+      secure: false,
+      connectionTimeout: 30000,
+      greetingTimeout: 10000,
+      socketTimeout: 300000,
+    };
+
+    it('should handle setupSocketHandlers with null socket', async () => {
+      const connection = new SMTPConnection(testOptions);
+      
+      // Call setupSocketHandlers with null socket (line 106)
+      (connection as any).socket = null;
+      (connection as any).setupSocketHandlers();
+      
+      // Should return early without error
+      expect(() => (connection as any).setupSocketHandlers()).not.toThrow();
+    });
+
+    it('should handle processLine with invalid format', async () => {
+      const connection = new SMTPConnection(testOptions);
+      
+      // Set up connection internals
+      (connection as any).multilineResponse = false;
+      (connection as any).currentCommand = {
+        callback: jest.fn(),
+      };
+      
+      // Call processLine with invalid format (line 154)
+      (connection as any).processLine('Invalid line without code');
+      
+      // Should return early without processing
+      expect((connection as any).currentCommand.callback).not.toHaveBeenCalled();
+    });
+
+    it('should handle processCommandQueue with null currentCommand after shift', async () => {
+      const connection = new SMTPConnection(testOptions);
+      
+      // Mock socket
+      const mockSocket = {
+        write: jest.fn(),
+      };
+      (connection as any).socket = mockSocket;
+      
+      // Set up command queue with undefined that will become null after shift
+      (connection as any).commandQueue = [undefined];
+      (connection as any).currentCommand = null;
+      
+      // Call processCommandQueue (should hit line 261)
+      (connection as any).processCommandQueue();
+      
+      // Should return early without writing
+      expect(mockSocket.write).not.toHaveBeenCalled();
+    });
+
+    it('should handle processCommandQueue when socket is null but has empty queue after shift', async () => {
+      const connection = new SMTPConnection(testOptions);
+      
+      // Mock socket initially
+      const mockSocket = {
+        write: jest.fn(),
+      };
+      (connection as any).socket = mockSocket;
+      
+      // Set up command queue that will have nothing after shift
+      (connection as any).commandQueue = [];
+      (connection as any).currentCommand = null;
+      
+      // Call processCommandQueue - should return early because queue is empty
+      (connection as any).processCommandQueue();
+      
+      expect((connection as any).currentCommand).toBeNull();
+      expect(mockSocket.write).not.toHaveBeenCalled();
     });
   });
 });

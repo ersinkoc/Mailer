@@ -449,10 +449,33 @@ describe('Encoding Integration Tests', () => {
 
     it('should handle CRLF sequences without double conversion', () => {
       // Test CRLF that should trigger line 81 (continue case)
-      // Use a string that contains actual CR+LF sequence
-      const textWithCRLF = 'Hello\r\nWorld\r\nTest';
-      const encoded = QuotedPrintable.encode(textWithCRLF);
-      expect(encoded).toBe('Hello\r\nWorld\r\nTest'); // Should preserve CRLF as-is
+      // We need to test the specific case where we have a LF that's preceded by CR
+      // This tests the continue statement on line 81
+      const buffer = Buffer.from([72, 101, 108, 108, 111, 13, 10, 87, 111, 114, 108, 100]); // Hello\r\nWorld
+      const text = buffer.toString('utf-8');
+      const encoded = QuotedPrintable.encode(text);
+      expect(encoded).toBe('Hello\r\nWorld'); // Should preserve CRLF as-is
+      
+      // Also test mixed line endings to ensure LF after CR triggers continue
+      const mixedBuffer = Buffer.from([65, 13, 10, 66, 10, 67, 13, 10]); // A\r\nB\nC\r\n
+      const mixedText = mixedBuffer.toString('utf-8');
+      const mixedEncoded = QuotedPrintable.encode(mixedText);
+      expect(mixedEncoded).toBe('A\r\nB\r\nC\r\n'); // LF converted to CRLF, existing CRLF preserved
+    });
+
+    it('should specifically test the continue case for LF after CR', () => {
+      // This specifically tests line 81 - when we have a LF (10) that's preceded by CR (13)
+      // The continue statement should be hit
+      const testCases = [
+        { input: Buffer.from([13, 10]), expected: '\r\n' }, // CR+LF
+        { input: Buffer.from([65, 13, 10, 66]), expected: 'A\r\nB' }, // A+CR+LF+B
+        { input: Buffer.from([13, 10, 13, 10]), expected: '\r\n\r\n' }, // Two CRLF sequences
+      ];
+      
+      testCases.forEach(({ input, expected }) => {
+        const encoded = QuotedPrintable.encode(input.toString('binary'));
+        expect(encoded).toBe(expected);
+      });
     });
 
     it('should handle binary data with CRLF sequences', () => {

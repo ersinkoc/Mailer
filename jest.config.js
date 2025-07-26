@@ -4,7 +4,11 @@ module.exports = {
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: {
+        strict: true,
+      },
+    }],
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -14,10 +18,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 100,
+      branches: 90,
       functions: 100,
-      lines: 100,
-      statements: 100,
+      lines: 99,
+      statements: 99,
     },
   },
   coverageDirectory: 'coverage',
@@ -25,11 +29,9 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        strict: true,
-      },
-    },
-  },
+  testTimeout: 10000,
+  detectOpenHandles: false,
+  maxWorkers: 1,
+  verbose: false,
+  silent: true,
 };

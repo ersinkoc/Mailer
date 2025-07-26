@@ -233,7 +233,7 @@ describe('Mailer', () => {
       await expect(mailer.send(multiMessage)).rejects.toThrow(MailerError);
     });
 
-    it('should validate CC and BCC recipients', async () => {
+    it('should validate CC and BCC recipients as arrays', async () => {
       const ccBccMessage = {
         ...validMessage,
         cc: ['cc@example.com'],
@@ -241,6 +241,34 @@ describe('Mailer', () => {
       };
 
       await expect(mailer.send(ccBccMessage)).resolves.not.toThrow();
+    });
+
+    it('should validate CC and BCC recipients as strings', async () => {
+      const ccBccMessage = {
+        ...validMessage,
+        cc: 'cc@example.com',
+        bcc: 'bcc@example.com',
+      };
+
+      await expect(mailer.send(ccBccMessage)).resolves.not.toThrow();
+    });
+
+    it('should validate mixed CC and BCC recipient formats', async () => {
+      const mixedMessage1 = {
+        ...validMessage,
+        cc: 'single-cc@example.com',
+        bcc: ['bcc1@example.com', 'bcc2@example.com'],
+      };
+
+      await expect(mailer.send(mixedMessage1)).resolves.not.toThrow();
+
+      const mixedMessage2 = {
+        ...validMessage,
+        cc: ['cc1@example.com', 'cc2@example.com'],
+        bcc: 'single-bcc@example.com',
+      };
+
+      await expect(mailer.send(mixedMessage2)).resolves.not.toThrow();
     });
 
     it('should throw error when mailer is destroyed', async () => {

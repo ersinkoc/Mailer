@@ -45,6 +45,12 @@ describe('SMTPClient', () => {
     client = new SMTPClient(defaultOptions);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
   describe('constructor', () => {
     it('should normalize options with defaults', async () => {
       const client = new SMTPClient({ host: 'smtp.example.com' });
@@ -569,92 +575,45 @@ describe('SMTPClient', () => {
       await client.send(multiRecipientMessage);
     });
 
-    it('should throw all recipients rejected when loop completes but accepted is empty', async () => {
-      const multiRecipientMessage: Message = {
+    it('should throw all recipients rejected when all recipients fail without early throw', async () => {
+      // This test is for the edge case where all recipients are rejected
+      // but we don't hit the early throw condition (line 119) and instead
+      // reach the check after the loop (line 125)
+      const singleRecipientMessage: Message = {
         ...basicMessage,
-        to: ['valid@example.com', 'invalid@example.com'],
+        to: ['invalid@example.com'],
       };
 
-      // Create a scenario where the first recipient succeeds but the second fails
-      // and we don't throw on the last recipient
-      let recipientIndex = 0;
-      mockConnection.sendCommand.mockImplementation((command: string) => {
-        if (command.startsWith('MAIL FROM:')) {
-          return Promise.resolve('250 Sender OK');
-        }
-        if (command.startsWith('RCPT TO:')) {
-          recipientIndex++;
-          if (recipientIndex === 1) {
-            // First recipient succeeds
-            return Promise.resolve('250 Recipient OK');
-          } else {
-            // Second recipient fails, but don't throw since we have accepted.length > 0
-            return Promise.reject(new MailerError('Invalid recipient', ErrorCodes.SMTP_ERROR, 550));
-          }
-        }
-        return Promise.resolve('250 OK');
-      });
+      // Mock sendRcptTo to reject but not throw early (simulating a specific edge case)
+      mockConnection.sendCommand
+        .mockResolvedValueOnce('250 Sender OK') // MAIL FROM
+        .mockRejectedValueOnce(new MailerError('Invalid recipient', ErrorCodes.SMTP_ERROR, 550)); // RCPT TO
 
-      // We need to manipulate the internal state to force accepted to be empty after loop
-      // This requires mocking the internal method behavior
-      let acceptedCallCount = 0;
+      // The error should be thrown from line 119, not 125, for single recipient
+      await expect(client.send(singleRecipientMessage)).rejects.toThrow(MailerError);
+    });
+
+    it('should throw all recipients rejected from line 125 when loop completes without accepted', async () => {
+      // This test specifically targets line 125 by creating a scenario where:
+      // 1. We have an empty recipient list (edge case)
+      // 2. The loop completes without throwing
+      // 3. But accepted array is still empty
       
-      (client as any).sendRcptTo = jest.fn().mockImplementation(async (_recipient: string) => {
-        acceptedCallCount++;
-        if (acceptedCallCount === 1) {
-          // First call succeeds
-          return Promise.resolve();
-        } else {
-          // Second call fails but won't trigger early throw due to accepted.length > 0
-          throw new MailerError('Recipient rejected', ErrorCodes.INVALID_RECIPIENT, 550);
-        }
+      const emptyRecipientMessage: Message = {
+        ...basicMessage,
+        to: [], // Empty recipient list
+      };
+
+      mockConnection.sendCommand.mockResolvedValue('250 OK');
+
+      // We need to mock the createEnvelope to return an empty to array
+      // This simulates a case where all recipients were filtered out
+      jest.spyOn(client as any, 'createEnvelope').mockReturnValue({
+        from: 'sender@example.com',
+        to: [], // Empty array will skip the loop but still check accepted.length
       });
 
-      // Override the entire send method to control the accepted array manipulation
-      client.send = jest.fn().mockImplementation(async function(this: any, message: Message) {
-        const envelope = this.createEnvelope(message);
-        await this.sendMailFrom(envelope.from);
-        
-        const accepted: string[] = [];
-        const rejected: string[] = [];
-        
-        // Simulate scenario where no recipients end up in accepted array
-        // even though the loop completes without throwing
-        for (const recipient of envelope.to) {
-          try {
-            await this.sendRcptTo(recipient);
-            // Intentionally don't add to accepted to simulate edge case
-          } catch (error) {
-            rejected.push(recipient);
-            // Check the condition from line 117 but don't throw
-            if (accepted.length === 0 && envelope.to.indexOf(recipient) === envelope.to.length - 1) {
-              // This is the condition, but let's not throw to reach line 125
-              // Skip the throw to continue to line 124 check
-            }
-          }
-        }
-        
-        // This triggers line 125
-        if (accepted.length === 0) {
-          throw new MailerError(
-            'All recipients were rejected',
-            ErrorCodes.INVALID_RECIPIENT,
-            undefined,
-            undefined,
-            'Check recipient email addresses',
-          );
-        }
-        
-        return {
-          messageId: 'test-id',
-          accepted,
-          rejected,
-          response: 'Message sent successfully',
-          envelope,
-        };
-      });
-
-      await expect(client.send(multiRecipientMessage)).rejects.toThrow('All recipients were rejected');
+      await expect(client.send(emptyRecipientMessage)).rejects.toThrow('All recipients were rejected');
     });
   });
 

@@ -182,6 +182,23 @@ describe('SimpleEncoding', () => {
       const text2 = 'A世界';
       expect(SimpleEncoding.selectBestEncoding(text2)).toBe('base64');
     });
+
+    it('should handle null regex match fallback', () => {
+      // Test the || [] fallback on line 106
+      const originalMatch = String.prototype.match;
+      String.prototype.match = jest.fn().mockReturnValue(null);
+      
+      // When match returns null, it should fallback to empty array and select 7bit
+      expect(SimpleEncoding.selectBestEncoding('test text')).toBe('7bit');
+      
+      // Restore original match
+      String.prototype.match = originalMatch;
+    });
+
+    it('should handle empty string', () => {
+      // Empty string should have no non-ASCII chars and return 7bit
+      expect(SimpleEncoding.selectBestEncoding('')).toBe('7bit');
+    });
   });
 
   describe('encodeContent', () => {
