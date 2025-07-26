@@ -36,7 +36,7 @@
     "zero-dependency",
     "typescript"
   ],
-  "author": "OXOG",
+  "author": "Ersin KOC",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
