@@ -103,7 +103,6 @@ export class QuotedPrintable {
         (byte === 9 && (i === bytes.length - 1 || bytes[i + 1] === 10 || bytes[i + 1] === 13)) // Trailing tab
       ) {
         encoded = `=${byte.toString(16).toUpperCase().padStart(2, '0')}`;
-      
       } else {
         // Regular character
         encoded = String.fromCharCode(byte);

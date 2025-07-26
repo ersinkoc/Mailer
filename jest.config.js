@@ -33,5 +33,4 @@ module.exports = {
   detectOpenHandles: false,
   maxWorkers: 1,
   verbose: false,
-  silent: true,
 };

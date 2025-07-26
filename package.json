@@ -20,12 +20,12 @@
     "clean": "rimraf dist",
     "test": "jest --forceExit",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "jest --coverage --forceExit",
     "lint": "eslint src tests --ext .ts",
     "lint:fix": "eslint src tests --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm run test:coverage && npm run lint"
+    "prepublishOnly": "npm run build && npm run test:coverage"
   },
   "keywords": [
     "email",

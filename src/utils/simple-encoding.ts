@@ -71,11 +71,11 @@ export class SimpleEncoding {
   public static quotedPrintableDecode(data: string): string {
     // Remove soft line breaks first
     const withoutSoftBreaks = data.replace(/=\r\n/g, '');
-    
+
     // Decode hex values to bytes
     const bytes: number[] = [];
     let i = 0;
-    
+
     while (i < withoutSoftBreaks.length) {
       if (withoutSoftBreaks[i] === '=' && i + 2 < withoutSoftBreaks.length) {
         const hex = withoutSoftBreaks.substring(i + 1, i + 3);
@@ -89,7 +89,7 @@ export class SimpleEncoding {
       bytes.push(withoutSoftBreaks.charCodeAt(i));
       i++;
     }
-    
+
     // Convert bytes to string using UTF-8 decoding
     return Buffer.from(bytes).toString('utf-8');
   }
