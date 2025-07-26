@@ -205,8 +205,8 @@ Contributions are welcome! Please read the contributing guidelines and submit pu
 
 ## Support
 
-- GitHub Issues: [Report bugs or request features](https://github.com/oxog/mailer/issues)
-- Documentation: [Full API documentation](https://github.com/oxog/mailer/docs)
+- GitHub Issues: [Report bugs or request features](https://github.com/ersinkoc/mailer/issues)
+- Documentation: [Full API documentation](https://github.com/ersinkoc/mailer/docs)
 - Examples: [More examples](./examples/)
 
 ## Comparison with Nodemailer

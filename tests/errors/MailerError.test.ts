@@ -15,7 +15,7 @@ describe('MailerError', () => {
     expect(error.statusCode).toBe(500);
     expect(error.response).toBe('500 Internal Server Error');
     expect(error.solution).toBe('Check your connection settings');
-    expect(error.documentation).toBe('https://github.com/oxog/mailer/docs/errors/ECONNECTION');
+    expect(error.documentation).toBe('https://github.com/ersinkoc/mailer/docs/errors/ECONNECTION');
     expect(error.name).toBe('MailerError');
   });
 
@@ -27,7 +27,7 @@ describe('MailerError', () => {
     expect(error.statusCode).toBeUndefined();
     expect(error.response).toBeUndefined();
     expect(error.solution).toBeUndefined();
-    expect(error.documentation).toBe('https://github.com/oxog/mailer/docs/errors/EAUTH');
+    expect(error.documentation).toBe('https://github.com/ersinkoc/mailer/docs/errors/EAUTH');
   });
 
   it('should serialize to JSON correctly', () => {
@@ -48,7 +48,7 @@ describe('MailerError', () => {
       statusCode: 550,
       response: '550 Mailbox not found',
       solution: 'Verify the recipient email address',
-      documentation: 'https://github.com/oxog/mailer/docs/errors/ESMTP',
+      documentation: 'https://github.com/ersinkoc/mailer/docs/errors/ESMTP',
       stack: expect.any(String),
     });
   });

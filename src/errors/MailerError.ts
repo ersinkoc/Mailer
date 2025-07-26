@@ -19,7 +19,7 @@ export class MailerError extends Error {
     this.statusCode = statusCode;
     this.response = response;
     this.solution = solution;
-    this.documentation = `https://github.com/oxog/mailer/docs/errors/${code}`;
+    this.documentation = `https://github.com/ersinkoc/mailer/docs/errors/${code}`;
 
     Error.captureStackTrace(this, this.constructor);
   }
