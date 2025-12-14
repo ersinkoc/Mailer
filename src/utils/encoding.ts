@@ -11,9 +11,9 @@ export class Base64 {
     let result = '';
 
     for (let i = 0; i < bytes.length; i += 3) {
-      const b1 = bytes[i]!;
-      const b2 = i + 1 < bytes.length ? bytes[i + 1]! : 0;
-      const b3 = i + 2 < bytes.length ? bytes[i + 2]! : 0;
+      const b1 = bytes[i] ?? 0;
+      const b2 = i + 1 < bytes.length ? (bytes[i + 1] ?? 0) : 0;
+      const b3 = i + 2 < bytes.length ? (bytes[i + 2] ?? 0) : 0;
 
       const triplet = (b1 << 16) | (b2 << 8) | b3;
 
@@ -32,13 +32,17 @@ export class Base64 {
 
     for (let i = 0; i < cleanData.length; i += 4) {
       const chunk = [
-        this.CHARS.indexOf(cleanData[i] || 'A'),
-        this.CHARS.indexOf(cleanData[i + 1] || 'A'),
-        this.CHARS.indexOf(cleanData[i + 2] || 'A'),
-        this.CHARS.indexOf(cleanData[i + 3] || 'A'),
+        this.CHARS.indexOf(cleanData[i] ?? 'A'),
+        this.CHARS.indexOf(cleanData[i + 1] ?? 'A'),
+        this.CHARS.indexOf(cleanData[i + 2] ?? 'A'),
+        this.CHARS.indexOf(cleanData[i + 3] ?? 'A'),
       ];
 
-      const triplet = (chunk[0]! << 18) | (chunk[1]! << 12) | (chunk[2]! << 6) | chunk[3]!;
+      const triplet =
+        ((chunk[0] ?? 0) << 18) |
+        ((chunk[1] ?? 0) << 12) |
+        ((chunk[2] ?? 0) << 6) |
+        (chunk[3] ?? 0);
 
       bytes.push((triplet >> 16) & 255);
       if (i + 2 < cleanData.length && cleanData[i + 2] !== '=') bytes.push((triplet >> 8) & 255);
@@ -70,7 +74,7 @@ export class QuotedPrintable {
     let currentLineLength = 0;
 
     for (let i = 0; i < bytes.length; i++) {
-      const byte = bytes[i]!;
+      const byte = bytes[i] ?? 0;
       let encoded = '';
 
       // Characters that need encoding
@@ -126,7 +130,7 @@ export class QuotedPrintable {
     const bytes: number[] = [];
 
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i]!;
+      let line = lines[i] ?? '';
 
       // Handle soft line breaks (line ending with =)
       const isSoftBreak = line.endsWith('=');
@@ -165,7 +169,8 @@ export class QuotedPrintable {
  */
 export class HeaderEncoding {
   public static encode(text: string, encoding: 'B' | 'Q' = 'B', charset = 'utf-8'): string {
-    // Check if encoding is needed
+    // Check if encoding is needed (non-ASCII characters)
+    // eslint-disable-next-line no-control-regex
     if (!/[^\x00-\x7F]/.test(text)) {
       return text;
     }
@@ -178,13 +183,13 @@ export class HeaderEncoding {
   public static decode(text: string): string {
     return text.replace(
       /=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g,
-      (match, charset, encoding, encodedText) => {
+      (match: string, charset: string, encoding: string, encodedText: string) => {
         try {
           if (encoding.toUpperCase() === 'B') {
             const decoded = Base64.decode(encodedText);
             // Try to decode with the specified charset
             try {
-              return decoded.toString(charset.toLowerCase());
+              return decoded.toString(charset.toLowerCase() as BufferEncoding);
             } catch {
               return decoded.toString('utf-8');
             }
@@ -249,6 +254,7 @@ export class HeaderEncoding {
  */
 export class EncodingUtils {
   public static needsEncoding(text: string): boolean {
+    // eslint-disable-next-line no-control-regex
     return /[^\x00-\x7F]/.test(text);
   }
 
@@ -258,6 +264,7 @@ export class EncodingUtils {
     }
 
     // Count non-ASCII characters
+    // eslint-disable-next-line no-control-regex
     const nonAsciiCount = (text.match(/[^\x00-\x7F]/g) || []).length;
     const totalLength = text.length;
 

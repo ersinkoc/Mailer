@@ -30,7 +30,7 @@ export class SimpleEncoding {
     const maxLineLength = 76;
 
     for (let i = 0; i < bytes.length; i++) {
-      const byte = bytes[i]!;
+      const byte = bytes[i] ?? 0;
       let encoded = '';
 
       // Handle line breaks first
@@ -95,6 +95,7 @@ export class SimpleEncoding {
   }
 
   public static needsEncoding(text: string): boolean {
+    // eslint-disable-next-line no-control-regex
     return /[^\x00-\x7F]/.test(text);
   }
 
@@ -103,6 +104,7 @@ export class SimpleEncoding {
       return '7bit';
     }
 
+    // eslint-disable-next-line no-control-regex
     const nonAsciiCount = (text.match(/[^\x00-\x7F]/g) || []).length;
     const totalLength = text.length;
 

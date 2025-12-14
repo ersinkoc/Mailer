@@ -1,0 +1,99 @@
+name: Bug Report
+description: File a bug report to help us improve @oxog/mailer
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: input
+    id: version
+    attributes:
+      label: Package Version
+      description: What version of @oxog/mailer are you using?
+      placeholder: v1.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js are you using?
+      placeholder: e.g., 18.17.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Please provide step-by-step instructions to reproduce the issue
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code Sample
+      description: Please provide a minimal code sample that reproduces the issue
+      render: typescript
+      placeholder: |
+        import { Mailer } from '@oxog/mailer';
+
+        const mailer = new Mailer({
+          // ... your config
+        });
+
+        // Your code here
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: bash
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I have searched existing issues to make sure this is not a duplicate
+          required: true
+        - label: I have provided all required information
+          required: true
+        - label: I am willing to help troubleshoot and provide additional information if needed
+          required: true

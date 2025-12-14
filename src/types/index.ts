@@ -57,7 +57,7 @@ export interface MailerOptions {
     | undefined;
   tls?: {
     rejectUnauthorized?: boolean;
-    minVersion?: string;
+    minVersion?: SecureVersion;
     ciphers?: string;
   };
   pool?: boolean | PoolOptions;
@@ -87,12 +87,18 @@ export interface Logger {
   error(message: string, ...args: unknown[]): void;
 }
 
+// Forward declaration to avoid circular dependency
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export declare class Mailer {}
+
 export interface Plugin {
   name: string;
   version?: string;
-  install(mailer: unknown): void;
+  install(mailer: Mailer): void;
   uninstall?(): void;
 }
+
+import { SecureVersion } from 'tls';
 
 export interface ConnectionOptions {
   host: string;
@@ -101,6 +107,11 @@ export interface ConnectionOptions {
   connectionTimeout: number;
   greetingTimeout: number;
   socketTimeout: number;
+  tls?: {
+    rejectUnauthorized?: boolean;
+    minVersion?: SecureVersion;
+    ciphers?: string;
+  };
 }
 
 export interface SMTPCapabilities {

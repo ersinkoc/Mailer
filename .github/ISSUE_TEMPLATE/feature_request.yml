@@ -1,0 +1,69 @@
+name: Feature Request
+description: Suggest an idea for @oxog/mailer
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature for @oxog/mailer!
+
+  - type: input
+    id: version
+    attributes:
+      label: Package Version
+      description: What version of @oxog/mailer are you currently using?
+      placeholder: v1.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is your feature request related to a problem?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      describe: Describe the solution you'd like
+      placeholder: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe any alternative solutions or workarounds you've considered.
+      placeholder: A clear and concise description of any alternative solutions or workarounds you've considered.
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe your use case and how this feature would help you or others.
+      placeholder: |
+        This feature would help me to...
+        This is important because...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: This feature is not already available in the library
+          required: true
+        - label: I understand this is a zero-dependency library
+          required: true
+        - label: I understand this feature would need to be implemented using only Node.js built-in modules
+          required: true
+        - label: I am willing to provide additional context and help with implementation details if needed
+          required: true

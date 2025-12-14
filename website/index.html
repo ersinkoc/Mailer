@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@oxog/mailer - Zero-Dependency SMTP Mailer for Node.js</title>
+    <meta name="description" content="A zero-dependency email sending library for Node.js with full SMTP protocol implementation. TypeScript-first, modern API, and 100% test coverage.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📧</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .code-block { background: #1e293b; }
+        .dark .code-block { background: #0f172a; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <!-- Navigation -->
+    <nav x-data="{ mobileMenuOpen: false, darkMode: false }" class="fixed w-full z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="text-2xl">📧</div>
+                    <div>
+                        <h1 class="text-xl font-bold">@oxog/mailer</h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">v1.1.0</p>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="hover:text-purple-600 transition-colors">Features</a>
+                    <a href="#getting-started" class="hover:text-purple-600 transition-colors">Getting Started</a>
+                    <a href="#examples" class="hover:text-purple-600 transition-colors">Examples</a>
+                    <a href="#api" class="hover:text-purple-600 transition-colors">API Reference</a>
+                    <a href="https://github.com/ersinkoc/mailer" class="hover:text-purple-600 transition-colors">GitHub</a>
+                    <a href="https://www.npmjs.com/package/@oxog/mailer" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">NPM</a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" x-transition class="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <div class="px-4 py-4 space-y-4">
+                <a href="#features" class="block hover:text-purple-600 transition-colors">Features</a>
+                <a href="#getting-started" class="block hover:text-purple-600 transition-colors">Getting Started</a>
+                <a href="#examples" class="block hover:text-purple-600 transition-colors">Examples</a>
+                <a href="#api" class="block hover:text-purple-600 transition-colors">API Reference</a>
+                <a href="https://github.com/ersinkoc/mailer" class="block hover:text-purple-600 transition-colors">GitHub</a>
+                <a href="https://www.npmjs.com/package/@oxog/mailer" class="block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-center">NPM</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 gradient-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                    Zero-Dependency SMTP Mailer
+                </h1>
+                <p class="text-xl md:text-2xl text-purple-100 mb-8">
+                    A modern, TypeScript-first email library for Node.js with full SMTP implementation from scratch
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                    <code class="font-mono text-lg bg-white/20 text-white px-6 py-3 rounded-lg backdrop-blur-sm">
+                        npm install @oxog/mailer
+                    </code>
+                    <button onclick="copyToClipboard('npm install @oxog/mailer')" class="bg-white text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-colors">
+                        Copy
+                    </button>
+                </div>
+                <div class="flex flex-wrap justify-center gap-6 text-purple-100">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Zero Dependencies</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>TypeScript First</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>100% Test Coverage</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white dark:bg-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Why Choose @oxog/mailer?</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300">Built from the ground up with modern standards and best practices</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl">
+                    <div class="text-3xl mb-4">🔒</div>
+                    <h3 class="text-xl font-semibold mb-3">Zero Dependencies</h3>
+                    <p class="text-gray-600 dark:text-gray-300">No external packages. Everything implemented from scratch using only Node.js built-in modules for maximum security and reliability.</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl">
+                    <div class="text-3xl mb-4">📘</div>
+                    <h3 class="text-xl font-semibold mb-3">TypeScript First</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Complete TypeScript support with strict typing. Full IntelliSense and type safety out of the box.</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl">
+                    <div class="text-3xl mb-4">🚀</div>
+                    <h3 class="text-xl font-semibold mb-3">Modern API</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Clean, intuitive API with Promise-based async/await support. No callbacks, just modern JavaScript.</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl">
+                    <div class="text-3xl mb-4">⚡</div>
+                    <h3 class="text-xl font-semibold mb-3">High Performance</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Connection pooling, rate limiting, and efficient resource management for high-throughput applications.</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl">
+                    <div class="text-3xl mb-4">🔐</div>
+                    <h3 class="text-xl font-semibold mb-3">Security First</h3>
+                    <p class="text-gray-600 dark:text-gray-300">STARTTLS support, multiple authentication methods (PLAIN, LOGIN, CRAM-MD5, OAuth2).</p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl">
+                    <div class="text-3xl mb-4">🧩</div>
+                    <h3 class="text-xl font-semibold mb-3">Extensible</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Plugin system with event-driven architecture. Customize and extend functionality as needed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section id="getting-started" class="py-20 bg-gray-50 dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Getting Started</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300">Send your first email in under 60 seconds</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-6">Installation</h3>
+                    <div class="code-block rounded-lg p-6 text-green-400 font-mono text-sm overflow-x-auto">
+                        <pre>npm install @oxog/mailer</pre>
+                    </div>
+
+                    <h3 class="text-2xl font-semibold mb-6 mt-12">Basic Usage</h3>
+                    <div class="code-block rounded-lg p-6 text-sm font-mono overflow-x-auto">
+<pre class="text-gray-300"><span class="text-purple-400">import</span> { Mailer } <span class="text-purple-400">from</span> <span class="text-green-400">'@oxog/mailer'</span>;
+
+<span class="text-purple-400">const</span> mailer = <span class="text-purple-400">new</span> Mailer({
+  host: <span class="text-green-400">'smtp.gmail.com'</span>,
+  port: <span class="text-orange-400">587</span>,
+  secure: <span class="text-orange-400">false</span>,
+  auth: {
+    user: <span class="text-green-400">'your-email@gmail.com'</span>,
+    pass: <span class="text-green-400">'your-app-password'</span>,
+  },
+});
+
+<span class="text-purple-400">async function</span> sendEmail() {
+  <span class="text-purple-400">const</span> result = <span class="text-purple-400">await</span> mailer.send({
+    from: <span class="text-green-400">'sender@example.com'</span>,
+    to: <span class="text-green-400">'recipient@example.com'</span>,
+    subject: <span class="text-green-400">'Hello from @oxog/mailer!'</span>,
+    text: <span class="text-green-400">'This is a test email.'</span>,
+    html: <span class="text-green-400">'<h1>Hello!</h1><p>This is a test email.</p>'</span>,
+  });
+
+  console.log(<span class="text-green-400">'Email sent:'</span>, result.messageId);
+}
+
+sendEmail();</pre>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold mb-6">Factory Methods</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Quick setup for popular email providers:</p>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Gmail</h4>
+                            <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+                                <pre class="text-gray-300"><span class="text-purple-400">const</span> gmailMailer = Mailer.createGmailClient(
+  <span class="text-green-400">'user@gmail.com'</span>,
+  <span class="text-green-400">'app-password'</span>
+);</pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Outlook</h4>
+                            <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+                                <pre class="text-gray-300"><span class="text-purple-400">const</span> outlookMailer = Mailer.createOutlookClient(
+  <span class="text-green-400">'user@outlook.com'</span>,
+  <span class="text-green-400">'password'</span>
+);</pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">OAuth2</h4>
+                            <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+                                <pre class="text-gray-300"><span class="text-purple-400">const</span> gmailOAuth = Mailer.createGmailOAuth2Client(
+  <span class="text-green-400">'user@gmail.com'</span>,
+  <span class="text-green-400">'access-token'</span>
+);</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="py-20 bg-white dark:bg-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Examples</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300">Real-world usage examples</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Example 1: HTML Email -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-8">
+                    <h3 class="text-xl font-semibold mb-4">HTML Email with Attachment</h3>
+                    <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+<pre class="text-gray-300"><span class="text-purple-400">await</span> mailer.send({
+  from: <span class="text-green-400">'sender@example.com'</span>,
+  to: <span class="text-green-400">'recipient@example.com'</span>,
+  subject: <span class="text-green-400">'Report Attachment'</span>,
+  html: <span class="text-green-400">`
+    &lt;h2&gt;Monthly Report&lt;/h2&gt;
+    &lt;p&gt;Please find the report attached.&lt;/p&gt;
+  `</span>,
+  attachments: [
+    {
+      filename: <span class="text-green-400">'report.pdf'</span>,
+      path: <span class="text-green-400">'./reports/monthly.pdf'</span>,
+      contentType: <span class="text-green-400">'application/pdf'</span>
+    }
+  ]
+});</pre>
+                    </div>
+                </div>
+
+                <!-- Example 2: Multiple Recipients -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-8">
+                    <h3 class="text-xl font-semibold mb-4">Multiple Recipients</h3>
+                    <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+<pre class="text-gray-300"><span class="text-purple-400">await</span> mailer.send({
+  from: <span class="text-green-400">'sender@example.com'</span>,
+  to: [
+    <span class="text-green-400">'team@example.com'</span>,
+    { name: <span class="text-green-400">'John Doe'</span>, address: <span class="text-green-400">'john@example.com'</span> }
+  ],
+  cc: <span class="text-green-400">'manager@example.com'</span>,
+  bcc: <span class="text-green-400">'archive@example.com'</span>,
+  subject: <span class="text-green-400">'Team Update'</span>,
+  text: <span class="text-green-400">'Weekly team update...'</span>
+});</pre>
+                    </div>
+                </div>
+
+                <!-- Example 3: Plugin System -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-8">
+                    <h3 class="text-xl font-semibold mb-4">Using Plugins</h3>
+                    <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+<pre class="text-gray-300"><span class="text-purple-400">const</span> loggerPlugin = {
+  name: <span class="text-green-400">'logger'</span>,
+  install(mailer) {
+    mailer.on(<span class="text-green-400">'beforeSend'</span>, (message) => {
+      console.log(<span class="text-green-400">'Sending:'</span>, message.subject);
+    });
+
+    mailer.on(<span class="text-green-400">'afterSend'</span>, (result) => {
+      console.log(<span class="text-green-400">'Sent:'</span>, result.messageId);
+    });
+  }
+};
+
+mailer.use(loggerPlugin);</pre>
+                    </div>
+                </div>
+
+                <!-- Example 4: Error Handling -->
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-8">
+                    <h3 class="text-xl font-semibold mb-4">Error Handling</h3>
+                    <div class="code-block rounded-lg p-4 text-sm font-mono overflow-x-auto">
+<pre class="text-gray-300"><span class="text-purple-400">try</span> {
+  <span class="text-purple-400">await</span> mailer.send(message);
+} <span class="text-purple-400">catch</span> (error) {
+  <span class="text-purple-400">if</span> (error <span class="text-purple-400">instanceof</span> MailerError) {
+    console.error(<span class="text-green-400">'Error:'</span>, error.code, error.message);
+    console.error(<span class="text-green-400">'Solution:'</span>, error.solution);
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Reference Section -->
+    <section id="api" class="py-20 bg-gray-50 dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">API Reference</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300">Complete API documentation</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-2xl font-semibold mb-6">MailerOptions</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">host: string</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">SMTP server hostname (required)</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">port?: number</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">SMTP server port (default: 587 for non-secure, 465 for secure)</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">secure?: boolean</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Use SSL/TLS connection (default: false)</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">auth?: AuthOptions</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Authentication credentials</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">rateLimit?: number</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Rate limit in messages per second</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-2xl font-semibold mb-6">Message</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">from: string | Address</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Sender address (required)</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">to: string | Address | Array</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Recipient(s) (required)</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">subject: string</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Email subject (required)</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">text?: string</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Plain text body</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">html?: string</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">HTML body</p>
+                        </div>
+                        <div>
+                            <code class="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">attachments?: Attachment[]</code>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">File attachments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+                <h3 class="text-2xl font-semibold mb-6">Methods</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold mb-2">send(message: Message)</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Send an email message</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Returns: Promise&lt;SendResult&gt;</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">verify()</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Verify SMTP connection</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Returns: Promise&lt;boolean&gt;</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">close()</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Close the mailer connection</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Returns: Promise&lt;void&gt;</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">use(plugin: Plugin)</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Install a plugin</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Returns: this</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="py-20 bg-white dark:bg-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Comparison with Nodemailer</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300">See how we stack up against the competition</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full bg-white dark:bg-gray-700 rounded-xl overflow-hidden">
+                    <thead class="bg-purple-600 text-white">
+                        <tr>
+                            <th class="px-6 py-4 text-left">Feature</th>
+                            <th class="px-6 py-4 text-center">@oxog/mailer</th>
+                            <th class="px-6 py-4 text-center">Nodemailer</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Dependencies</td>
+                            <td class="px-6 py-4 text-center text-green-600 font-semibold">0</td>
+                            <td class="px-6 py-4 text-center text-red-600">50+</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Bundle Size</td>
+                            <td class="px-6 py-4 text-center text-green-600 font-semibold">~50KB</td>
+                            <td class="px-6 py-4 text-center text-red-600">~1MB+</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">TypeScript</td>
+                            <td class="px-6 py-4 text-center text-green-600 font-semibold">Native</td>
+                            <td class="px-6 py-4 text-center text-yellow-600">Third-party types</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Plugin System</td>
+                            <td class="px-6 py-4 text-center text-green-600 font-semibold">Built-in</td>
+                            <td class="px-6 py-4 text-center text-yellow-600">Limited</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">OAuth2</td>
+                            <td class="px-6 py-4 text-center text-green-600 font-semibold">Built-in</td>
+                            <td class="px-6 py-4 text-center text-yellow-600">Plugin required</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium">Modern API</td>
+                            <td class="px-6 py-4 text-center text-green-600 font-semibold">Promise-based</td>
+                            <td class="px-6 py-4 text-center text-yellow-600">Callback + Promise</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="text-2xl">📧</div>
+                        <div>
+                            <h3 class="text-lg font-bold">@oxog/mailer</h3>
+                            <p class="text-sm text-gray-400">v1.1.0</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">Zero-dependency SMTP mailer for modern Node.js applications.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Documentation</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#getting-started" class="hover:text-white transition-colors">Getting Started</a></li>
+                        <li><a href="#examples" class="hover:text-white transition-colors">Examples</a></li>
+                        <li><a href="#api" class="hover:text-white transition-colors">API Reference</a></li>
+                        <li><a href="https://github.com/ersinkoc/mailer/blob/main/BUG_REPORT.md" class="hover:text-white transition-colors">Bug Reports</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Community</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="https://github.com/ersinkoc/mailer" class="hover:text-white transition-colors">GitHub</a></li>
+                        <li><a href="https://github.com/ersinkoc/mailer/issues" class="hover:text-white transition-colors">Issues</a></li>
+                        <li><a href="https://github.com/ersinkoc/mailer/discussions" class="hover:text-white transition-colors">Discussions</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="https://www.npmjs.com/package/@oxog/mailer" class="hover:text-white transition-colors">NPM Package</a></li>
+                        <li><a href="https://github.com/ersinkoc/mailer/blob/main/LICENSE" class="hover:text-white transition-colors">License</a></li>
+                        <li><a href="https://github.com/ersinkoc/mailer/blob/main/CHANGELOG.md" class="hover:text-white transition-colors">Changelog</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Ersin KOC. Released under the MIT License.</p>
+                <p class="mt-2">Built with ❤️ for the Node.js community</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('bg-green-500', 'text-white');
+                setTimeout(function() {
+                    btn.textContent = originalText;
+                    btn.classList.remove('bg-green-500', 'text-white');
+                }, 2000);
+            });
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

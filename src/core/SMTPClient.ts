@@ -4,13 +4,14 @@ import { MailerOptions, Message, SendResult, Address } from '../types';
 import { MailerError, ErrorCodes } from '../errors/MailerError';
 import { SimpleEncoding } from '../utils/simple-encoding';
 import { EventEmitter } from 'events';
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { basename } from 'path';
 
 export class SMTPClient extends EventEmitter {
   private connection: SMTPConnection | null = null;
   private auth: SMTPAuth | null = null;
   private options: Required<Omit<MailerOptions, 'auth'>> & { auth?: MailerOptions['auth'] };
+  private lastSendTime = 0;
 
   constructor(options: MailerOptions) {
     super();
@@ -52,6 +53,7 @@ export class SMTPClient extends EventEmitter {
       connectionTimeout: this.options.connectionTimeout,
       greetingTimeout: this.options.greetingTimeout,
       socketTimeout: this.options.socketTimeout,
+      tls: this.options.tls,
     });
 
     this.setupConnectionHandlers();
@@ -89,6 +91,20 @@ export class SMTPClient extends EventEmitter {
   }
 
   public async send(message: Message): Promise<SendResult> {
+    // Enforce rate limiting
+    if (this.options.rateLimit > 0) {
+      const now = Date.now();
+      const timeSinceLastSend = now - this.lastSendTime;
+      const minInterval = 1000 / this.options.rateLimit;
+
+      if (timeSinceLastSend < minInterval) {
+        const waitTime = minInterval - timeSinceLastSend;
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+      }
+
+      this.lastSendTime = Date.now();
+    }
+
     if (!this.connection || this.connection.getState() !== SMTPState.READY) {
       await this.connect();
     }
@@ -114,10 +130,6 @@ export class SMTPClient extends EventEmitter {
           accepted.push(recipient);
         } catch (error) {
           rejected.push(recipient);
-          if (accepted.length === 0 && envelope.to.indexOf(recipient) === envelope.to.length - 1) {
-            // All recipients rejected
-            throw error;
-          }
         }
       }
 
@@ -182,7 +194,7 @@ export class SMTPClient extends EventEmitter {
     if (typeof addr === 'string') {
       // Extract email from "Name <email@example.com>" format
       const match = addr.match(/<([^>]+)>/);
-      return match ? match[1]! : addr;
+      return match ? (match[1] ?? addr) : addr;
     }
     return addr.address;
   }
@@ -227,6 +239,20 @@ export class SMTPClient extends EventEmitter {
   ): Promise<string> {
     if (!this.connection) throw new Error('No connection');
 
+    // Check size limit if server provided one
+    const messageSize = this.estimateMessageSize(message);
+    const sizeLimit = this.connection.getCapabilities().size;
+
+    if (sizeLimit && messageSize > sizeLimit) {
+      throw new MailerError(
+        `Message size (${messageSize} bytes) exceeds server limit (${sizeLimit} bytes)`,
+        ErrorCodes.MESSAGE_REJECTED,
+        undefined,
+        undefined,
+        'Reduce message size or remove attachments',
+      );
+    }
+
     // Start DATA command
     await this.connection.sendCommand('DATA');
 
@@ -247,7 +273,40 @@ export class SMTPClient extends EventEmitter {
 
     // Extract message ID from response if available
     const messageIdMatch = response.match(/queued as ([A-Za-z0-9]+)/);
-    return messageIdMatch ? messageIdMatch[1]! : this.generateMessageId();
+    return messageIdMatch
+      ? (messageIdMatch[1] ?? this.generateMessageId())
+      : this.generateMessageId();
+  }
+
+  private estimateMessageSize(message: Message): number {
+    // Calculate approximate message size including attachments
+    let size = 0;
+
+    if (message.text) size += message.text.length;
+    if (message.html) size += message.html.length;
+
+    if (message.attachments) {
+      for (const attachment of message.attachments) {
+        if (typeof attachment.content === 'string') {
+          size += attachment.content.length;
+        } else if (Buffer.isBuffer(attachment.content)) {
+          size += attachment.content.length;
+        } else if (attachment.path) {
+          // Estimate file size
+          try {
+            const stats = statSync(attachment.path);
+            size += stats.size;
+          } catch {
+            // Ignore if can't read
+          }
+        }
+      }
+    }
+
+    // Add overhead for headers, encoding, etc. (approximate)
+    size += 1000;
+
+    return size;
   }
 
   private buildMessageData(message: Message, _envelope: { from: string; to: string[] }): string {
@@ -290,7 +349,26 @@ export class SMTPClient extends EventEmitter {
 
     // Custom headers
     if (message.headers) {
+      const forbiddenHeaders = ['from', 'to', 'cc', 'bcc', 'subject', 'date', 'message-id'];
+
       for (const [key, value] of Object.entries(message.headers)) {
+        const lowerKey = key.toLowerCase();
+
+        if (forbiddenHeaders.includes(lowerKey)) {
+          throw new MailerError(
+            `Cannot override header: ${key}`,
+            ErrorCodes.INVALID_CONFIG,
+            undefined,
+            undefined,
+            'Remove forbidden header from custom headers',
+          );
+        }
+
+        // Validate header format
+        if (!/^[A-Za-z0-9-]+$/.test(key)) {
+          throw new MailerError(`Invalid header name: ${key}`, ErrorCodes.INVALID_CONFIG);
+        }
+
         headers.push(`${key}: ${value}`);
       }
     }
@@ -372,18 +450,33 @@ export class SMTPClient extends EventEmitter {
             // Set filename from path if not provided
             if (!attachment.filename && typeof attachment.path === 'string') {
               const filename = basename(attachment.path);
-              // Update the Content-Type and Content-Disposition headers with filename
-              const lastIdx = parts.length - 1;
-              for (let i = lastIdx; i >= lastIdx - 5 && i >= 0; i--) {
-                if (parts[i]!.startsWith('Content-Type:') && !parts[i]!.includes('name=')) {
-                  parts[i] += `; name="${filename}"`;
+
+              // Find the indices of Content-Type and Content-Disposition headers
+              let contentTypeIdx = -1;
+              let contentDispositionIdx = -1;
+
+              for (let i = 0; i < parts.length; i++) {
+                const part = parts[i] ?? '';
+                if (part.startsWith('Content-Type:')) {
+                  contentTypeIdx = i;
                 }
-                if (
-                  parts[i]!.startsWith('Content-Disposition:') &&
-                  !parts[i]!.includes('filename=')
-                ) {
-                  parts[i] += `; filename="${filename}"`;
+                if (part.startsWith('Content-Disposition:')) {
+                  contentDispositionIdx = i;
                 }
+              }
+
+              // Update headers if found and not already set
+              if (contentTypeIdx >= 0) {
+                const ctPart = parts[contentTypeIdx] ?? '';
+                if (!ctPart.includes('name=')) {
+                  parts[contentTypeIdx] += `; name="${filename}"`;
+                }
+              }
+              if (
+                contentDispositionIdx >= 0 &&
+                !(parts[contentDispositionIdx] ?? '').includes('filename=')
+              ) {
+                parts[contentDispositionIdx] += `; filename="${filename}"`;
               }
             }
           } catch (error) {
@@ -400,6 +493,11 @@ export class SMTPClient extends EventEmitter {
             content = Buffer.from(attachment.content, 'utf-8');
           } else if (Buffer.isBuffer(attachment.content)) {
             content = attachment.content;
+          } else {
+            throw new MailerError(
+              'Attachment content must be a string or Buffer',
+              ErrorCodes.INVALID_CONFIG,
+            );
           }
         }
 
@@ -461,7 +559,7 @@ export class SMTPClient extends EventEmitter {
   private generateMessageId(): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 15);
-    const hostname = this.options.name;
+    const hostname = this.options.name.replace(/[^A-Za-z0-9.-]/g, '_');
     return `${timestamp}.${random}@${hostname}`;
   }
 
@@ -473,11 +571,12 @@ export class SMTPClient extends EventEmitter {
     if (!this.options.logger) return;
 
     if (typeof this.options.logger === 'object') {
-      const logger = this.options.logger as any;
+      const logger = this.options.logger as unknown as { [key: string]: unknown };
       if (typeof logger[level] === 'function') {
-        logger[level](message, ...args);
+        (logger[level] as (message: string, ...args: unknown[]) => void)(message, ...args);
       }
     } else if (this.options.debug) {
+      // eslint-disable-next-line no-console
       console.log(`[${level.toUpperCase()}] ${message}`, ...args);
     }
   }

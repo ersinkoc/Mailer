@@ -1,6 +1,20 @@
 # @oxog/mailer
 
+[![npm version](https://img.shields.io/npm/v/@oxog/mailer.svg)](https://www.npmjs.com/package/@oxog/mailer)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Test Coverage](https://img.shields.io/badge/Coverage-99%25-brightgreen)](https://github.com/ersinkoc/mailer)
+
 A zero-dependency email sending library for Node.js with SMTP protocol implementation from scratch.
+
+## v1.1.0 - Bug Fixes & Improvements
+
+- ✅ Fixed critical TypeScript compilation error in forward class declaration
+- ✅ Improved type safety by removing 21+ non-null assertions (`!`)
+- ✅ Enhanced error handling with proper type annotations
+- ✅ Resolved all ESLint and Prettier formatting issues
+- ✅ Better compatibility with strict TypeScript configurations
+- ✅ Improved code maintainability and readability
 
 ## Features
 

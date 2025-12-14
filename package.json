@@ -1,6 +1,6 @@
 {
   "name": "@oxog/mailer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Zero-dependency email sending library for Node.js with SMTP protocol implementation",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -25,7 +25,9 @@
     "lint:fix": "eslint src tests --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm run test:coverage"
+    "prepublishOnly": "npm run build && npm run test:coverage",
+    "serve:website": "cd website && python -m http.server 8000",
+    "deploy:website": "echo 'Website is ready for deployment. Push to main branch to deploy to GitHub Pages.'"
   },
   "publishConfig": {
     "access": "public"

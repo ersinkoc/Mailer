@@ -184,7 +184,7 @@ export class Mailer extends EventEmitter {
 
   private extractEmail(addr: string): string {
     const match = addr.match(/<([^>]+)>/);
-    return match ? match[1]! : addr;
+    return match ? (match[1] ?? addr) : addr;
   }
 
   public async verify(): Promise<boolean> {
@@ -296,9 +296,9 @@ export class Mailer extends EventEmitter {
 
     const promises = listeners.map(async (listener) => {
       try {
-        const result = listener.apply(this, args);
-        if (result && typeof result.then === 'function') {
-          await result;
+        const result: unknown = listener.apply(this, args);
+        if (result && typeof (result as { then?: unknown }).then === 'function') {
+          await (result as Promise<unknown>);
         }
       } catch (error) {
         this.emit(

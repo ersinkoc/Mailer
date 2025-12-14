@@ -64,8 +64,10 @@ export class SMTPConnection extends EventEmitter {
         this.socket = tlsConnect({
           host: this.options.host,
           port: this.options.port,
-          rejectUnauthorized: true,
+          rejectUnauthorized: this.options.tls?.rejectUnauthorized ?? true,
           servername: this.options.host,
+          minVersion: this.options.tls?.minVersion,
+          ciphers: this.options.tls?.ciphers,
         });
       } else {
         this.socket = new Socket();
@@ -80,7 +82,7 @@ export class SMTPConnection extends EventEmitter {
         this.emit('connect');
       });
 
-      this.socket.once('error', (error) => {
+      this.socket.once('error', (error: Error) => {
         clearTimeout(connectionTimeout);
         this.state = SMTPState.ERROR;
         reject(
@@ -154,21 +156,23 @@ export class SMTPConnection extends EventEmitter {
     if (!match) return;
 
     const [, code, separator, message] = match;
+    const codeStr = code ?? '';
+    const msgStr = message ?? '';
 
-    if (this.multilineResponse && code === this.lastResponseCode) {
-      this.responseBuffer.push(message!);
+    if (this.multilineResponse && codeStr === this.lastResponseCode) {
+      this.responseBuffer.push(msgStr);
       if (separator === ' ') {
         this.multilineResponse = false;
-        this.handleResponse(parseInt(code, 10), this.responseBuffer.join('\n'));
+        this.handleResponse(parseInt(codeStr, 10), this.responseBuffer.join('\n'));
         this.responseBuffer = [];
         this.lastResponseCode = '';
       }
     } else if (separator === '-') {
       this.multilineResponse = true;
-      this.lastResponseCode = code!;
-      this.responseBuffer.push(message!);
+      this.lastResponseCode = codeStr;
+      this.responseBuffer.push(msgStr);
     } else {
-      this.handleResponse(parseInt(code!, 10), message!);
+      this.handleResponse(parseInt(codeStr, 10), msgStr);
     }
   }
 
@@ -218,7 +222,11 @@ export class SMTPConnection extends EventEmitter {
       if (capability.startsWith('AUTH ')) {
         this.capabilities.auth = capability.substring(5).split(' ');
       } else if (capability.startsWith('SIZE ')) {
-        this.capabilities.size = parseInt(capability.substring(5), 10);
+        const sizeStr = capability.substring(5).trim();
+        const size = parseInt(sizeStr, 10);
+        if (!isNaN(size)) {
+          this.capabilities.size = size;
+        }
       } else if (capability === 'STARTTLS') {
         this.capabilities.starttls = true;
       } else if (capability === '8BITMIME') {
@@ -261,7 +269,7 @@ export class SMTPConnection extends EventEmitter {
     if (!this.currentCommand || !this.socket) return;
 
     const { command } = this.currentCommand;
-    const logCommand = command.startsWith('AUTH') ? 'AUTH ***' : command;
+    const logCommand = command.split(' ')[0] === 'AUTH' ? 'AUTH ***' : command;
     this.emit('command', logCommand);
 
     this.socket.write(`${command}\r\n`, 'utf-8', (error) => {
@@ -290,7 +298,9 @@ export class SMTPConnection extends EventEmitter {
       const tlsOptions = {
         socket: this.socket as Socket,
         servername: this.options.host,
-        rejectUnauthorized: true,
+        rejectUnauthorized: this.options.tls?.rejectUnauthorized ?? true,
+        minVersion: this.options.tls?.minVersion,
+        ciphers: this.options.tls?.ciphers,
       };
 
       const tlsSocket = tlsConnect(tlsOptions, () => {
@@ -302,7 +312,7 @@ export class SMTPConnection extends EventEmitter {
           .catch(reject);
       });
 
-      tlsSocket.on('error', (error) => {
+      tlsSocket.on('error', (error: Error) => {
         reject(
           new MailerError(
             `TLS upgrade failed: ${error.message}`,

@@ -157,13 +157,45 @@ export class SMTPAuth {
     try {
       const challengeResponse = await this.connection.sendCommand('AUTH CRAM-MD5');
 
-      // Extract challenge from response (should be base64 encoded after status code)
-      const match = challengeResponse.match(/^3\d{2}\s+(.+)$/);
-      if (!match || !match[1]) {
+      // Extract challenge from response - handle various server response formats
+      // Try multiple patterns to find the base64-encoded challenge
+      let challenge = '';
+      const trimmedResponse = challengeResponse.trim();
+
+      // Pattern 1: "334 <base64>" or "334 <base64> some text"
+      const match = trimmedResponse.match(/^334\s+(.+)$/);
+      if (match && match[1]) {
+        challenge = match[1].trim();
+      }
+
+      // Pattern 2: Multiline response - find line with base64-like content
+      if (!challenge) {
+        const lines = challengeResponse.split('\n');
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          // Check if line looks like base64 (contains base64 characters and no status code)
+          // Must be at least 8 characters to be a valid challenge
+          if (
+            trimmedLine &&
+            !/^\d{3}\s/.test(trimmedLine) &&
+            /^[A-Za-z0-9+/=]+$/.test(trimmedLine) &&
+            trimmedLine.length >= 8
+          ) {
+            challenge = trimmedLine;
+            break;
+          }
+        }
+      }
+
+      if (!challenge) {
         throw new MailerError('Invalid CRAM-MD5 challenge response', ErrorCodes.AUTH_FAILED);
       }
 
-      const challenge = Buffer.from(match[1], 'base64').toString('utf-8');
+      try {
+        challenge = Buffer.from(challenge, 'base64').toString('utf-8');
+      } catch {
+        throw new MailerError('Invalid CRAM-MD5 challenge response', ErrorCodes.AUTH_FAILED);
+      }
 
       // Calculate HMAC-MD5
       const hmac = createHmac('md5', credentials.pass);

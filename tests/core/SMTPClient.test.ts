@@ -552,11 +552,19 @@ describe('SMTPClient', () => {
     });
 
     it('should wrap non-MailerError exceptions', async () => {
+      const multiRecipientMessage: Message = {
+        ...basicMessage,
+        to: ['recipient1@example.com', 'recipient2@example.com'],
+      };
+
       mockConnection.sendCommand
         .mockResolvedValueOnce('250 Sender OK')
-        .mockRejectedValueOnce(new Error('Generic error'));
+        .mockResolvedValueOnce('250 Recipient 1 OK')  // First recipient accepted
+        .mockResolvedValueOnce('250 Recipient 2 OK')  // Second recipient accepted
+        .mockResolvedValueOnce('354 Start mail input')
+        .mockRejectedValueOnce(new Error('Generic error'));  // DATA command fails
 
-      await expect(client.send(basicMessage)).rejects.toThrow('Failed to send message: Generic error');
+      await expect(client.send(multiRecipientMessage)).rejects.toThrow('Failed to send message: Generic error');
     });
 
     it('should throw when all recipients are rejected after some accepted', async () => {
