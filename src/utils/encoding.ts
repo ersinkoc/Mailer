@@ -45,8 +45,9 @@ export class Base64 {
         (chunk[3] ?? 0);
 
       bytes.push((triplet >> 16) & 255);
-      if (i + 2 < cleanData.length && cleanData[i + 2] !== '=') bytes.push((triplet >> 8) & 255);
-      if (i + 3 < cleanData.length && cleanData[i + 3] !== '=') bytes.push(triplet & 255);
+      // Note: '=' padding is stripped by cleanData regex, so length checks handle padding correctly
+      if (i + 2 < cleanData.length) bytes.push((triplet >> 8) & 255);
+      if (i + 3 < cleanData.length) bytes.push(triplet & 255);
     }
 
     return Buffer.from(bytes);

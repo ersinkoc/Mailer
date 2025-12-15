@@ -21,7 +21,7 @@ describe('index.ts exports', () => {
   it('should export VERSION constant', () => {
     expect(MailerExports.VERSION).toBeDefined();
     expect(typeof MailerExports.VERSION).toBe('string');
-    expect(MailerExports.VERSION).toBe('1.0.0');
+    expect(MailerExports.VERSION).toBe('1.1.0');
   });
 
   it('should have all expected exports', () => {
