@@ -168,9 +168,11 @@ export class SMTPClient extends EventEmitter {
     const from = this.extractAddress(message.from);
     const to: string[] = [];
 
-    // Add TO recipients
-    const toAddresses = Array.isArray(message.to) ? message.to : [message.to];
-    to.push(...toAddresses.map((addr) => this.extractAddress(addr)));
+    // Add TO recipients (only if defined)
+    if (message.to) {
+      const toAddresses = Array.isArray(message.to) ? message.to : [message.to];
+      to.push(...toAddresses.map((addr) => this.extractAddress(addr)));
+    }
 
     // Add CC recipients
     if (message.cc) {

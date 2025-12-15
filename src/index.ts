@@ -22,4 +22,4 @@ export { MailerError, ErrorCodes } from './errors/MailerError';
 export { SimpleEncoding } from './utils/simple-encoding';
 
 // Version
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
