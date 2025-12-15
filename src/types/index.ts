@@ -16,7 +16,7 @@ export interface Attachment {
 
 export interface Message {
   from: string | Address;
-  to: string | Address | Array<string | Address>;
+  to?: string | Address | Array<string | Address>;
   cc?: string | Address | Array<string | Address>;
   bcc?: string | Address | Array<string | Address>;
   subject: string;
