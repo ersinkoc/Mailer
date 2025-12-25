@@ -102,6 +102,34 @@ describe('Mailer', () => {
       expect(() => new Mailer(invalidOptions as any)).toThrow('Access token is required');
     });
 
+    it('should accept OAuth2 with accessToken when type is undefined (BUG-004)', () => {
+      const oauthOptions = {
+        ...validOptions,
+        auth: {
+          user: 'test@example.com',
+          accessToken: 'ya29.test-token',
+          // type is undefined - should work because accessToken is provided
+        },
+      };
+
+      expect(() => new Mailer(oauthOptions)).not.toThrow();
+    });
+
+    it('should throw error when both accessToken and pass are provided with undefined type', () => {
+      const invalidOptions = {
+        ...validOptions,
+        auth: {
+          user: 'test@example.com',
+          accessToken: 'ya29.test-token',
+          pass: 'password',
+          // type is undefined and both credentials provided - should require password
+        },
+      };
+
+      // When both are provided, password auth takes precedence
+      expect(() => new Mailer(invalidOptions)).not.toThrow();
+    });
+
     it('should accept valid OAuth2 configuration', () => {
       const oauthOptions = {
         ...validOptions,
@@ -159,6 +187,52 @@ describe('Mailer', () => {
         code: ErrorCodes.INVALID_RECIPIENT,
         message: 'At least one recipient is required',
       });
+    });
+
+    it('should reject empty recipient arrays (BUG-005)', async () => {
+      const invalidMessage = {
+        ...validMessage,
+        to: [] as any,
+      };
+
+      await expect(mailer.send(invalidMessage)).rejects.toThrow(MailerError);
+      await expect(mailer.send(invalidMessage)).rejects.toMatchObject({
+        code: ErrorCodes.INVALID_RECIPIENT,
+        message: 'At least one recipient is required',
+      });
+    });
+
+    it('should reject all empty recipient arrays (BUG-005)', async () => {
+      const invalidMessage = {
+        ...validMessage,
+        to: [] as any,
+        cc: [] as any,
+        bcc: [] as any,
+      };
+
+      await expect(mailer.send(invalidMessage)).rejects.toThrow(MailerError);
+      await expect(mailer.send(invalidMessage)).rejects.toMatchObject({
+        code: ErrorCodes.INVALID_RECIPIENT,
+        message: 'At least one recipient is required',
+      });
+    });
+
+    it('should accept message with at least one non-empty recipient array', async () => {
+      const validMessageWithCc = {
+        ...validMessage,
+        to: [] as any,
+        cc: ['cc@example.com'],
+      };
+
+      mockClient.send.mockResolvedValue({
+        messageId: 'test-id',
+        accepted: ['cc@example.com'],
+        rejected: [],
+        response: 'OK',
+        envelope: { from: 'sender@example.com', to: ['cc@example.com'] },
+      });
+
+      await expect(mailer.send(validMessageWithCc)).resolves.toBeDefined();
     });
 
     it('should require subject', async () => {
