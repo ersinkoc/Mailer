@@ -1,4 +1,5 @@
 import * as MailerExports from '../src/index';
+import packageJson from '../package.json';
 
 describe('index.ts exports', () => {
   it('should export Mailer class', () => {
@@ -21,7 +22,8 @@ describe('index.ts exports', () => {
   it('should export VERSION constant', () => {
     expect(MailerExports.VERSION).toBeDefined();
     expect(typeof MailerExports.VERSION).toBe('string');
-    expect(MailerExports.VERSION).toBe('1.1.0');
+    // BUG-001 fix: VERSION should match package.json
+    expect(MailerExports.VERSION).toBe(packageJson.version);
   });
 
   it('should have all expected exports', () => {

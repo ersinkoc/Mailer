@@ -21,5 +21,6 @@ export { MailerError, ErrorCodes } from './errors/MailerError';
 // Encoding utilities for advanced users
 export { SimpleEncoding } from './utils/simple-encoding';
 
-// Version
-export const VERSION = '1.1.0';
+// Version - BUG-001 fix: Import from package.json to stay in sync
+import packageJson from '../package.json';
+export const VERSION = packageJson.version;

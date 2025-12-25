@@ -48,15 +48,24 @@ export class Mailer extends EventEmitter {
         );
       }
 
-      if (options.auth.type === 'xoauth2' && !options.auth.accessToken) {
-        throw new MailerError(
-          'Access token is required for XOAUTH2',
-          ErrorCodes.INVALID_CONFIG,
-          undefined,
-          undefined,
-          'Provide auth.accessToken for XOAUTH2',
-        );
-      } else if (options.auth.type !== 'xoauth2' && !options.auth.pass) {
+      // BUG-004 fix: Handle undefined type by checking what credentials are provided
+      const hasAccessToken = !!options.auth.accessToken;
+      const hasPassword = !!options.auth.pass;
+      const authType = options.auth.type;
+
+      if (authType === 'xoauth2' || (!authType && hasAccessToken && !hasPassword)) {
+        // XOAUTH2 auth or type is undefined but only accessToken is provided
+        if (!hasAccessToken) {
+          throw new MailerError(
+            'Access token is required for XOAUTH2',
+            ErrorCodes.INVALID_CONFIG,
+            undefined,
+            undefined,
+            'Provide auth.accessToken for XOAUTH2',
+          );
+        }
+      } else if (!hasPassword) {
+        // For all other auth types (plain, login, cram-md5) or undefined with password
         throw new MailerError(
           'Password is required for non-XOAUTH2 authentication',
           ErrorCodes.INVALID_CONFIG,
@@ -112,7 +121,12 @@ export class Mailer extends EventEmitter {
       );
     }
 
-    if (!message.to && !message.cc && !message.bcc) {
+    // BUG-005 fix: Check for empty arrays as well as falsy values
+    const hasTo = message.to && (Array.isArray(message.to) ? message.to.length > 0 : true);
+    const hasCc = message.cc && (Array.isArray(message.cc) ? message.cc.length > 0 : true);
+    const hasBcc = message.bcc && (Array.isArray(message.bcc) ? message.bcc.length > 0 : true);
+
+    if (!hasTo && !hasCc && !hasBcc) {
       throw new MailerError(
         'At least one recipient is required',
         ErrorCodes.INVALID_RECIPIENT,
